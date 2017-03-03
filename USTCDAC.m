@@ -98,7 +98,7 @@ classdef USTCDAC < handle
             obj.SetTrigStart(obj.trig_delay/4e-9 + 1);
             obj.SetTrigStop(obj.trig_delay/4e-9 + 10);
             for k = 1:obj.channel_amount
-                obj.SetOffset(k-1,obj.offset(k));
+%                 obj.SetOffset(k-1,obj.offset(k));
                 obj.SetGain(k-1,obj.gain(k));
             end
             obj.SetLoop(1,1,1,1);
@@ -244,6 +244,7 @@ classdef USTCDAC < handle
         
         function SetOffset(obj,channel,data)
             obj.AutoOpen();
+            channel = channel + 4;
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00000702')),uint32(channel),uint32(data));
             if(ret == -1)
                  error('USTCDAC:WriteOffset','WriteOffset failed.');
