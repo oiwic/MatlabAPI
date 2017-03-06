@@ -2,7 +2,7 @@
 % 	Author:GuoCheng
 % 	E-mail:fortune@mail.ustc.edu.cn
 % 	All right reserved @ GuoCheng.
-% 	Modified: 2017.3.6
+% 	Modified: 2017.2.26
 %   Description:The class of DAC
 
 classdef USTCDAC < handle
@@ -99,24 +99,27 @@ classdef USTCDAC < handle
             obj.SetTrigStop(obj.trig_delay/4e-9 + 10);
             obj.SetLoop(1,1,1,1);
             
-            for k = 1:obj.channel_amount
-%                 obj.SetOffset(k-1,obj.offset(k));
-                obj.SetGain(k-1,obj.gain(k));
-            end
             try_count = 10;
             isDACReady = 0;
             while(try_count > 0 && ~isDACReady)
-                obj.InitBoard();
-                ret = obj.GetReturn(1);
-                if(mod(floor(ret(2)/16),4) == 3)
+                obj.isblock = 1;
+                ret = obj.ReadReg(5,8);
+                obj.isblock = 0;
+                if(mod(floor(ret/(2^20)),4) == 3)
                     isDACReady = 1;
                 else
+                    obj.InitBoard();
                     try_count =  try_count - 1;
                     pause(0.1);
                 end
             end
             if(isDACReady == 0)
                 error('USTCDAC:InitError','Config DAC failed!');
+            end
+            
+            for k = 1:obj.channel_amount
+%                 obj.SetOffset(k-1,obj.offset(k));
+                obj.SetGain(k-1,obj.gain(k));
             end
         end
         
@@ -133,9 +136,9 @@ classdef USTCDAC < handle
         end
         
         function AutoOpen(obj)
-            if(~libisloaded(USTCDAC.driver))
-                driverfilename = [USTCDAC.driver,'.dll'];
-                loadlibrary(driverfilename,USTCDAC.driverh);
+            if(~libisloaded(obj.driver))
+                driverfilename = [obj.driver,'.dll'];
+                loadlibrary(driverfilename,obj.driverh);
             end
             if(~obj.isopen)
                 obj.Open();
@@ -253,7 +256,7 @@ classdef USTCDAC < handle
         function SetGain(obj,channel,data)
              obj.AutoOpen();
              map = [2,3,0,1];       %有bug，需要做一次映射
-             channel = map(channel);
+             channel = map(channel+1);
              ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00000702')),uint32(channel),uint32(data));
              if(ret == -1)
                  error('USTCDAC:WriteGain','WriteGain failed.');
@@ -263,7 +266,7 @@ classdef USTCDAC < handle
         function SetOffset(obj,channel,data)
             obj.AutoOpen();
             map = [6,7,4,5];       %有bug，需要做一次映射
-            channel = map(channel);
+            channel = map(channel+1);
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00000702')),uint32(channel),uint32(data));
             if(ret == -1)
                  error('USTCDAC:WriteOffset','WriteOffset failed.');
@@ -297,6 +300,8 @@ classdef USTCDAC < handle
                 data(2*k) = data(2*k-1);
                 data(2*k-1) = temp;
             end
+            % 数据反相，临时需要
+            data = 65535 - data;
             % 从0通道开始编号
             ch = ch - 1;
             ch(ch < 0) = 0;
@@ -360,12 +365,13 @@ classdef USTCDAC < handle
         
         function reg = ReadReg(obj,bank,addr)
              obj.AutoOpen();
-             cmd = bank*256 + 1;
+             cmd = bank*256 + 1; %1表示ReadReg，指令和bank存储在一个DWORD数据中
+             reg = 0;
              ret = calllib(obj.driver,'ReadInstruction',obj.id,uint32(cmd),uint32(addr));
              if(ret == 0)
                  if(obj.isblock == true)
                       ret = obj.GetReturn(1);
-                      reg = ret(2)*65536 + ret(1);
+                      reg = double(ret(2))*65536 + double(ret(1));
                  end
               else
                   error('USTCDAC:ReadWaveError','ReadWave failed.');
@@ -381,7 +387,7 @@ classdef USTCDAC < handle
         end
         
         function data = GetReturn(obj,offset)
-           obj.AutoOpen()
+           obj.AutoOpen();
            [func_type,~,~,para2] = obj.GetFuncType(1);
            if(func_type == 1 || func_type == 2)
                length = 4;
@@ -409,7 +415,6 @@ classdef USTCDAC < handle
             if(ret == -1)
                  error('USTCDAC:WriteRegError','WriteReg failed.');
             end
-            obj.Close();
         end
         
         function SetGainPara(obj,channel,gain)
@@ -437,8 +442,8 @@ classdef USTCDAC < handle
         end
         
         function SetTrigDelay(obj,num)
-            obj.SetTrigStart(obj.trig_delay/4e-9 + 1 + num);
-            obj.SetTrigStop(obj.trig_delay/4e-9 + 10 + num);
+            obj.SetTrigStart(floor((obj.trig_delay+ num)/8)+1);
+            obj.SetTrigStop(floor((obj.trig_delay+ num)/8)+ 10);
         end
         
         function value = get(obj,properties)
@@ -474,6 +479,7 @@ classdef USTCDAC < handle
                 case 'sync_delay';obj.sync_delay = value;
                 case 'trig_delay';obj.trig_delay = value;
                 case 'sample_rate';obj.sample_rate = value;
+                case 'datrigdelayoffset'; obj.daTrigDelayOffset = value;
                 otherwise; error('USTCDAC:get','do not exsis the properties')
             end
         end
