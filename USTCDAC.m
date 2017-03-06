@@ -2,7 +2,7 @@
 % 	Author:GuoCheng
 % 	E-mail:fortune@mail.ustc.edu.cn
 % 	All right reserved @ GuoCheng.
-% 	Modified: 2017.2.28
+% 	Modified: 2017.3.6
 %   Description:The class of DAC
 
 classdef USTCDAC < handle
@@ -97,11 +97,27 @@ classdef USTCDAC < handle
             obj.SetDACStop(obj.sync_delay/4e-9 + 10);
             obj.SetTrigStart(obj.trig_delay/4e-9 + 1);
             obj.SetTrigStop(obj.trig_delay/4e-9 + 10);
+            obj.SetLoop(1,1,1,1);
+            
             for k = 1:obj.channel_amount
 %                 obj.SetOffset(k-1,obj.offset(k));
                 obj.SetGain(k-1,obj.gain(k));
             end
-            obj.SetLoop(1,1,1,1);
+            try_count = 10;
+            isDACReady = 0;
+            while(try_count > 0 && ~isDACReady)
+                obj.InitBoard();
+                ret = obj.GetReturn(1);
+                if(mod(floor(ret(2)/16),4) == 3)
+                    isDACReady = 1;
+                else
+                    try_count =  try_count - 1;
+                    pause(0.1);
+                end
+            end
+            if(isDACReady == 0)
+                error('USTCDAC:InitError','Config DAC failed!');
+            end
         end
         
         function Close(obj)
@@ -236,6 +252,8 @@ classdef USTCDAC < handle
         
         function SetGain(obj,channel,data)
              obj.AutoOpen();
+             map = [2,3,0,1];       %有bug，需要做一次映射
+             channel = map(channel);
              ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00000702')),uint32(channel),uint32(data));
              if(ret == -1)
                  error('USTCDAC:WriteGain','WriteGain failed.');
@@ -244,7 +262,8 @@ classdef USTCDAC < handle
         
         function SetOffset(obj,channel,data)
             obj.AutoOpen();
-            channel = channel + 4;
+            map = [6,7,4,5];       %有bug，需要做一次映射
+            channel = map(channel);
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00000702')),uint32(channel),uint32(data));
             if(ret == -1)
                  error('USTCDAC:WriteOffset','WriteOffset failed.');
