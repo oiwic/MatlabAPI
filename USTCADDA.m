@@ -2,7 +2,7 @@
 % 	Author:GuoCheng
 % 	E-mail:fortune@mail.ustc.edu.cn
 % 	All right reserved @ GuoCheng.
-% 	Modified: 2017.2.27
+% 	Modified: 2017.3.7
 %   Description:The class of ADDA
 classdef USTCADDA < handle
     properties(SetAccess = private)
@@ -39,7 +39,7 @@ classdef USTCADDA < handle
             % 共2个序列数据,但是必须组成512bit位宽的数据
             seq  = zeros(1,16384);
             %first sequence,会产生16ns延时，用于触发启动输出。
-            function_ctrl = 64;     %53-63位
+            function_ctrl = 64+4;   %53-63位
             trigger_ctrl  = 0;      %48-55位
             counter_ctrl  = 0;      %32-47位，计时计数器
             length_wave   = 2;      %16-31位,输出波形长度
@@ -260,7 +260,7 @@ classdef USTCADDA < handle
             len = length(data);
             keep_code = data(len);
             % 生成格式化的序列
-            seq = USTCADDA.GenerateTrigSeq(len,ch_delay);
+            seq = obj.GenerateTrigSeq(len,ch_delay);
             % 发送序列
             da_struct.da.WriteSeq(ch,0,seq);
             % 格式化波形,需要与序列数据配合来实现格式
@@ -290,7 +290,7 @@ classdef USTCADDA < handle
             % 停止输出
             da_struct.da.StartStop(2^(ch-1)*16);
             % 写入序列
-            seq = USTCADDA.GenerateContinuousSeq(length(voltage));
+            seq = obj.GenerateContinuousSeq(length(voltage));
             da_struct.da.WriteSeq(ch,0,seq);
             % 写入波形
             da_struct.da.WriteWave(ch,0,voltage);

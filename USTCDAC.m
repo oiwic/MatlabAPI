@@ -28,6 +28,7 @@ classdef USTCDAC < handle
         trig_sel = 0;           %触发源选择
         trig_interval = 200e-6; %主板连续触发输出时间间隔
         ismaster = 0;           %主板标识
+        daTrigDelayOffset = 0;  %未使用
     end
     
     properties (GetAccess = private,Constant = true)
