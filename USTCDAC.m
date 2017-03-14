@@ -24,6 +24,7 @@ classdef USTCDAC < handle
         da_range = 0.8;         %最大电压，未使用
         gain = zeros(1,4);      %通道增益
         offset = zeros(1,4);    %通道偏置
+        default_volt = ones(1,4)*33270; % 关闭DAC电压
         
         trig_sel = 0;           %触发源选择
         trig_interval = 200e-6; %主板连续触发输出时间间隔
@@ -121,6 +122,7 @@ classdef USTCDAC < handle
             for k = 1:obj.channel_amount
 %                 obj.SetOffset(k-1,obj.offset(k));
                 obj.SetGain(k-1,obj.gain(k));
+                obj.SetDefaultVolt(k-1,obj.default_volt(k));
             end
         end
         
@@ -269,6 +271,15 @@ classdef USTCDAC < handle
             map = [6,7,4,5];       %有bug，需要做一次映射
             channel = map(channel+1);
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00000702')),uint32(channel),uint32(data));
+            if(ret == -1)
+                 error('USTCDAC:WriteOffset','WriteOffset failed.');
+            end
+        end
+        
+        function SetDefaultVolt(obj,channel,volt)
+            obj.AutoOpen();
+            volt = mod(volt,256)*256 + floor(volt/256);    %高低位切换
+            ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001B05')),uint32(channel),uint32(volt));
             if(ret == -1)
                  error('USTCDAC:WriteOffset','WriteOffset failed.');
             end

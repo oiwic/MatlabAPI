@@ -24,6 +24,7 @@ classdef USTCADDA < handle
         ad_range = 1;           %未使用
         da_taken;               %da通道占用
         ad_taken;               %ad通道占用
+        da_start_code;          %触发输出时，起始码码值
         offsetCorr;             %用来补偿差放的0偏置，暂不使用
     end
     
@@ -89,6 +90,7 @@ classdef USTCADDA < handle
         function obj = USTCADDA()
             obj.sample_depth = 2000;
             obj.trig_count = 100;
+            obj.da_start_code = 32767;
         end
        
         function Config(obj)
@@ -262,10 +264,12 @@ classdef USTCADDA < handle
             da_struct.da.WriteSeq(ch,0,seq);
             % 格式化波形,需要与序列数据配合来实现格式
             if(mod(len,8) ~= 0)
-                data(len+1:(floor(len/8)+2)*8) = 32768 + obj.offsetCorr(channel);
+                data(len+1:(floor(len/8)+2)*8) = keep_code;
+            else
+                data(len+1:len+8) = keep_code;
             end
             len = length(data);
-            data(len+1:len+16) = 32768 + obj.offsetCorr(channel);    %16个采样点的起始码
+            data(len+1:len+16) = obj.da_start_code;    %16个采样点的起始码
             % 发送波形
             da_struct.da.WriteWave(ch,0,data);
             % 相当于或上一个通道
