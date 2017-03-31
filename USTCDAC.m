@@ -389,6 +389,26 @@ classdef USTCDAC < handle
                   error('USTCDAC:ReadWaveError','ReadWave failed.');
               end
         end
+        
+        function data = ReadAD9136_1(obj,addr)
+            obj.AutoOpen();
+            ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001c05')),uint32(addr),uint32(0));
+            if(ret == -1)
+                 error('USTCDAC:ReadAD9136','ReadAD9136 failed.');
+            end
+            ret = obj.GetReturn(1);
+            data = double(ret(2))*65536 + double(ret(1));
+        end
+        
+        function data = ReadAD9136_2(obj,addr)
+            obj.AutoOpen();
+            ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001d05')),uint32(addr),uint32(0));
+            if(ret == -1)
+                 error('USTCDAC:ReadAD9136','ReadAD9136 failed.');
+            end
+            ret = obj.GetReturn(1);
+            data = double(ret(2))*65536 + double(ret(1));
+        end
 
         function [functiontype,instruction,para1,para2] = GetFuncType(obj,offset)
             obj.AutoOpen()
