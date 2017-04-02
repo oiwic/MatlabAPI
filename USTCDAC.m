@@ -103,6 +103,12 @@ classdef USTCDAC < handle
             
             try_count = 10;
             isDACReady = 0;
+            
+            obj.InitBoard();
+            ret = obj.GetReturn(1);
+            data = double(ret(2))*65536 + double(ret(1));
+            WriteLog(obj.ip,data);
+            
             while(try_count > 0 && ~isDACReady)
                 obj.isblock = 1;
                 ret = obj.ReadReg(5,8);
@@ -124,6 +130,8 @@ classdef USTCDAC < handle
                 obj.SetGain(k-1,obj.gain(k));
                 obj.SetDefaultVolt(k-1,obj.default_volt(k));
             end
+            obj.PowerOnDAC(1,0);
+            obj.PowerOnDAC(2,0);
         end
         
         function Close(obj)
@@ -446,6 +454,14 @@ classdef USTCDAC < handle
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001A05')),11,uint32(2^16));
             if(ret == -1)
                  error('USTCDAC:WriteRegError','WriteReg failed.');
+            end
+        end
+        
+        function PowerOnDAC(obj,chip,onoff)
+            obj.AutoOpen();
+            ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001E05')),uint32(chip),uint32(onoff));
+            if(ret == -1)
+                 error('USTCDAC:PowerOnDAC','PowerOnDAC failed.');
             end
         end
         
