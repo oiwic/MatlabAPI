@@ -293,9 +293,10 @@ classdef USTCDAC < handle
             end
         end
         
-        function WriteReg(obj,addr,data)
+        function WriteReg(obj,bank,addr,data)
              obj.AutoOpen();
-             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00000002')),uint32(addr),uint32(data));
+             cmd = bank*256 + 2; %1表示ReadReg，指令和bank存储在一个DWORD数据中
+             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(cmd),uint32(addr),uint32(data));
              if(ret == -1)
                  error('USTCDAC:WriteRegError','WriteReg failed.');
              end
