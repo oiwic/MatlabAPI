@@ -6,7 +6,7 @@ data2(17:32) = 65535;
 da = USTCDAC('10.0.1.219',80);
 da.Open();
 seq = USTCADDA.GenerateContinusSeq(32);
-da.WriteSeq(0,0,seq);
+da.WriteSeq(1,0,seq);
 da.StartStop(1);
 for k = 1:1
     da.WriteWave(0,0,data1);

@@ -1,16 +1,16 @@
 %% Éú³ÉÊµÀý
-da1 = USTCDAC('10.0.2.7',80);
-da2 = USTCDAC('10.0.2.8',80);
+da1 = USTCDAC('10.0.2.8',80);
+da2 = USTCDAC('10.0.2.5',80);
 
 %% da1
 da1.set('ismaster',1);
 da1.Open();
 
-data1 = [ones(1,12),ones(1,12)*65535];
+data1 = [ones(1,3200),ones(1,3200)*65535];
 seq1 = USTCADDA.GenerateTrigSeq(length(data1),0);
 
 da1.SetTrigCount(100);
-da1.SetTrigSel(3);
+da1.SetTrigSel(0);
 
 da1.WriteSeq(1,0,seq1);
 da1.WriteSeq(2,0,seq1);
@@ -31,7 +31,7 @@ da1.CheckStatus();
 da2.Open();
 data2 = [ones(1,12),ones(1,12)*65535];
 seq2 = USTCADDA.GenerateTrigSeq(length(data2),0);
-da2.set('ismaster',0);
+
 da2.SetTrigSel(0);
 da2.WriteSeq(0,0,seq2);
 da2.WriteSeq(1,0,seq2);
@@ -39,6 +39,7 @@ da2.WriteSeq(2,0,seq2);
 da2.WriteSeq(3,0,seq2);
 
 data2 = [data1,ones(1,16)*32768];
+da1.SetTrigSel(0);
 
 da2.WriteWave(0,0,data2);
 da2.WriteWave(1,0,data2);
@@ -52,5 +53,5 @@ da2.CheckStatus();
 da1.SendIntTrig();
 
 %% close
-da1.close()
-da2.close()
+da1.Close()
+da2.Close()

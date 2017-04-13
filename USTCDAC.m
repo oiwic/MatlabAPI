@@ -2,7 +2,7 @@
 % 	Author:GuoCheng
 % 	E-mail:fortune@mail.ustc.edu.cn
 % 	All right reserved @ GuoCheng.
-% 	Modified: 2017.2.26
+% 	Modified: 2017.4.8
 %   Description:The class of DAC
 
 classdef USTCDAC < handle
@@ -94,7 +94,7 @@ classdef USTCDAC < handle
             obj.SetIsMaster(obj.ismaster);
             obj.SetTrigSel(obj.trig_sel);
             obj.SetTrigInterval(obj.trig_interval);
-            obj.SetTotalCount(obj.trig_interval/4e-9 - 100);
+            obj.SetTotalCount(obj.trig_interval/4e-9 - 5000);
             obj.SetDACStart(obj.sync_delay/4e-9 + 1);
             obj.SetDACStop(obj.sync_delay/4e-9 + 10);
             obj.SetTrigStart(obj.trig_delay/4e-9 + 1);
@@ -103,12 +103,7 @@ classdef USTCDAC < handle
             
             try_count = 10;
             isDACReady = 0;
-            
-            obj.InitBoard();
-            ret = obj.GetReturn(1);
-            data = double(ret(2))*65536 + double(ret(1));
-            WriteLog(obj.ip,data);
-            
+                     
             while(try_count > 0 && ~isDACReady)
                 obj.isblock = 1;
                 ret = obj.ReadReg(5,8);
@@ -126,9 +121,9 @@ classdef USTCDAC < handle
             end
             
             for k = 1:obj.channel_amount
-%                 obj.SetOffset(k-1,obj.offset(k));
-                obj.SetGain(k-1,obj.gain(k));
-                obj.SetDefaultVolt(k-1,obj.default_volt(k));
+%                 obj.SetOffset(k,obj.offset(k));
+                obj.SetGain(k,obj.gain(k));
+                obj.SetDefaultVolt(k,obj.default_volt(k));
             end
             obj.PowerOnDAC(1,0);
             obj.PowerOnDAC(2,0);
@@ -267,7 +262,7 @@ classdef USTCDAC < handle
         function SetGain(obj,channel,data)
              obj.AutoOpen();
              map = [2,3,0,1];       %有bug，需要做一次映射
-             channel = map(channel+1);
+             channel = map(channel);
              ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00000702')),uint32(channel),uint32(data));
              if(ret == -1)
                  error('USTCDAC:WriteGain','WriteGain failed.');
@@ -277,7 +272,7 @@ classdef USTCDAC < handle
         function SetOffset(obj,channel,data)
             obj.AutoOpen();
             map = [6,7,4,5];       %有bug，需要做一次映射
-            channel = map(channel+1);
+            channel = map(channel);
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00000702')),uint32(channel),uint32(data));
             if(ret == -1)
                  error('USTCDAC:WriteOffset','WriteOffset failed.');
@@ -286,6 +281,7 @@ classdef USTCDAC < handle
         
         function SetDefaultVolt(obj,channel,volt)
             obj.AutoOpen();
+            channel = channel - 1;
             volt = mod(volt,256)*256 + floor(volt/256);    %高低位切换
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001B05')),uint32(channel),uint32(volt));
             if(ret == -1)
