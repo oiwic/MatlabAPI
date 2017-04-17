@@ -132,7 +132,7 @@ classdef USTCDAC < handle
         function Close(obj)
             if obj.isopen
                 ret = calllib(obj.driver,'Close',uint32(obj.id));
-                if(ret == -1)
+                if(ret ~= 0)
                     error('USTCDA:CloseError','Close DA failed.');              
                 end
                 obj.id = [];
@@ -154,7 +154,7 @@ classdef USTCDAC < handle
         function StartStop(obj,index)
             obj.AutoOpen();
             ret = calllib(obj.driver,'WriteInstruction', obj.id,uint32(hex2dec('00000405')),uint32(index),0);
-            if(ret == -1)
+            if(ret ~= 0)
                 error('USTCDAC:StartStopError','Start/Stop failed.');
             end
         end
@@ -162,7 +162,7 @@ classdef USTCDAC < handle
         function FlipRAM(obj,index)
             obj.AutoOpen();
             ret = calllib(obj.driver,'WriteInstruction', obj.id,uint32(hex2dec('00000305')),uint32(index),0);
-            if(ret == -1)
+            if(ret ~= 0)
                  error('USTCDAC:FlipRAMError','FlipRAM failed.');
             end
         end
@@ -172,7 +172,7 @@ classdef USTCDAC < handle
             para1 = arg1*2^16 + arg2;
             para2 = arg3*2^16 + arg4;
             ret = calllib(obj.driver,'WriteInstruction', obj.id,uint32(hex2dec('00000905')),uint32(para1),uint32(para2));
-            if(ret == -1)
+            if(ret ~= 0)
                 error('USTCDAC:SetLoopError','SetLoop failed.');
             end
         end
@@ -180,7 +180,7 @@ classdef USTCDAC < handle
         function SetTotalCount(obj,count)
              obj.AutoOpen();
              ret = calllib(obj.driver,'WriteInstruction',uint32(obj.id),uint32(hex2dec('00001805')),1,uint32(count*2^16));
-             if(ret == -1)
+             if(ret ~= 0)
                  error('USTCDAC:SetTotalCount','Set SetTotalCount failed.');
              end
         end
@@ -188,7 +188,7 @@ classdef USTCDAC < handle
         function SetDACStart(obj,count)
              obj.AutoOpen();
              ret = calllib(obj.driver,'WriteInstruction',uint32(obj.id),uint32(hex2dec('00001805')),2,uint32(count*2^16));
-             if(ret == -1)
+             if(ret ~= 0)
                  error('USTCDAC:SetDACStart','Set SetDACStart failed.');
              end
         end
@@ -196,7 +196,7 @@ classdef USTCDAC < handle
         function SetDACStop(obj,count)
              obj.AutoOpen();
              ret = calllib(obj.driver,'WriteInstruction',uint32(obj.id),uint32(hex2dec('00001805')),3,uint32(count*2^16));
-             if(ret == -1)
+             if(ret ~= 0)
                  error('USTCDAC:SetDACStop','Set SetDACStop failed.');
              end
         end
@@ -204,7 +204,7 @@ classdef USTCDAC < handle
         function SetTrigStart(obj,count)
             obj.AutoOpen();
             ret = calllib(obj.driver,'WriteInstruction',uint32(obj.id),uint32(hex2dec('00001805')),4,uint32(count*2^16));
-            if(ret == -1)
+            if(ret ~= 0)
                 error('USTCDAC:SetTrigStart','Set SetTrigStart failed.');
             end
         end
@@ -212,7 +212,7 @@ classdef USTCDAC < handle
         function SetTrigStop(obj,count)
             obj.AutoOpen();
              ret = calllib(obj.driver,'WriteInstruction',uint32(obj.id),uint32(hex2dec('00001805')),5,uint32(count*2^16));
-             if(ret == -1)
+             if(ret ~= 0)
                  error('USTCDAC:SetTrigStop','Set SetTrigStop failed.');
              end
          end
@@ -220,7 +220,7 @@ classdef USTCDAC < handle
         function SetIsMaster(obj,ismaster)
             obj.AutoOpen();
             ret= calllib(obj.driver,'WriteInstruction',uint32(obj.id),uint32(hex2dec('00001805')),6,uint32(ismaster*2^16));
-            if(ret == -1)
+            if(ret ~= 0)
                 error('USTCDAC:SetIsMaster','Set SetIsMaster failed.');
             end
         end
@@ -228,7 +228,7 @@ classdef USTCDAC < handle
         function SetTrigSel(obj,sel)
             obj.AutoOpen();
             ret= calllib(obj.driver,'WriteInstruction',uint32(obj.id),uint32(hex2dec('00001805')),7,uint32(sel*2^16));
-            if(ret == -1)
+            if(ret ~= 0)
                 error('USTCDAC:SetTrigSel','Set SetTrigSel failed.');
             end
         end
@@ -236,7 +236,7 @@ classdef USTCDAC < handle
         function SendIntTrig(obj)
              obj.AutoOpen();
              ret = calllib(obj.driver,'WriteInstruction',uint32(obj.id),uint32(hex2dec('00001805')),8,uint32(2^16));
-             if(ret == -1)
+             if(ret ~= 0)
                  error('USTCDAC:SendIntTrig','Set SendIntTrig failed.');
              end
         end
@@ -246,7 +246,7 @@ classdef USTCDAC < handle
             obj.AutoOpen();
             count = T/4e-9;
             ret= calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001805')),9,uint32(count*2^12));
-             if(ret == -1)
+             if(ret ~= 0)
                  error('USTCDAC:SelectTrigIntervalError','Set trigger interval failed.');
              end
         end 
@@ -254,7 +254,7 @@ classdef USTCDAC < handle
         function SetTrigCount(obj,count)
             obj.AutoOpen();
             ret= calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001805')),10,uint32(count*2^12));
-             if(ret == -1)
+             if(ret ~= 0)
                  error('USTCDAC:SetTrigCountError','Set trigger Count failed.');
              end
         end
@@ -264,7 +264,7 @@ classdef USTCDAC < handle
              map = [2,3,0,1];       %有bug，需要做一次映射
              channel = map(channel);
              ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00000702')),uint32(channel),uint32(data));
-             if(ret == -1)
+             if(ret ~= 0)
                  error('USTCDAC:WriteGain','WriteGain failed.');
              end
         end
@@ -274,7 +274,7 @@ classdef USTCDAC < handle
             map = [6,7,4,5];       %有bug，需要做一次映射
             channel = map(channel);
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00000702')),uint32(channel),uint32(data));
-            if(ret == -1)
+            if(ret ~= 0)
                  error('USTCDAC:WriteOffset','WriteOffset failed.');
             end
         end
@@ -284,7 +284,7 @@ classdef USTCDAC < handle
             channel = channel - 1;
             volt = mod(volt,256)*256 + floor(volt/256);    %高低位切换
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001B05')),uint32(channel),uint32(volt));
-            if(ret == -1)
+            if(ret ~= 0)
                  error('USTCDAC:WriteOffset','WriteOffset failed.');
             end
         end
@@ -293,7 +293,7 @@ classdef USTCDAC < handle
              obj.AutoOpen();
              cmd = bank*256 + 2; %1表示ReadReg，指令和bank存储在一个DWORD数据中
              ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(cmd),uint32(addr),uint32(data));
-             if(ret == -1)
+             if(ret ~= 0)
                  error('USTCDAC:WriteRegError','WriteReg failed.');
              end
         end
@@ -326,7 +326,7 @@ classdef USTCDAC < handle
             len = length(data)*2;
             pval = libpointer('uint16Ptr', data);
             [ret,~] = calllib(obj.driver,'WriteMemory',obj.id,uint32(hex2dec('000000004')),uint32(startaddr),uint32(len),pval);
-            if(ret == -1)
+            if(ret ~= 0)
                 error('USTCDAC:WriteWaveError','WriteWave failed.');
             end
         end
@@ -348,7 +348,7 @@ classdef USTCDAC < handle
             len = length(data)*2;               %字节个数。
             pval = libpointer('uint16Ptr', data);
             [ret,~] = calllib(obj.driver,'WriteMemory',obj.id,uint32(hex2dec('00000004')),uint32(startaddr),uint32(len),pval);
-            if(ret == -1)
+            if(ret ~= 0)
                 error('USTCDAC:WriteSeqError','WriteSeq failed.');
             end
         end
@@ -398,7 +398,7 @@ classdef USTCDAC < handle
         function data = ReadAD9136_1(obj,addr)
             obj.AutoOpen();
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001c05')),uint32(addr),uint32(0));
-            if(ret == -1)
+            if(ret ~= 0)
                  error('USTCDAC:ReadAD9136','ReadAD9136 failed.');
             end
             ret = obj.GetReturn(1);
@@ -408,7 +408,7 @@ classdef USTCDAC < handle
         function data = ReadAD9136_2(obj,addr)
             obj.AutoOpen();
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001d05')),uint32(addr),uint32(0));
-            if(ret == -1)
+            if(ret ~= 0)
                  error('USTCDAC:ReadAD9136','ReadAD9136 failed.');
             end
             ret = obj.GetReturn(1);
@@ -418,7 +418,7 @@ classdef USTCDAC < handle
         function [functiontype,instruction,para1,para2] = GetFuncType(obj,offset)
             obj.AutoOpen()
             [ret,functiontype,instruction,para1,para2] = calllib(obj.driver,'GetFunctionType',uint32(obj.id),uint32(offset),0,0,0,0);
-            if(ret == -1)
+            if(ret ~= 0)
                 error('USTCDAC:GetFuncType','GetFuncType failed');
             end
         end
@@ -433,7 +433,7 @@ classdef USTCDAC < handle
            end
            pData = libpointer('uint16Ptr',zeros(1,length/2));
            [ret,data] = calllib(obj.driver,'GetReturn',uint32(obj.id),uint32(offset),pData);
-           if(ret == -1)
+           if(ret ~= 0)
                error('USTCDAC:GetReturn','Get return failed!');
            end
         end
@@ -441,7 +441,7 @@ classdef USTCDAC < handle
         function isSuccessed = CheckStatus(obj)
            obj.AutoOpen()
            [ret,isSuccessed] = calllib(obj.driver,'CheckSuccessed',uint32(obj.id),0);
-           if(ret == -1)
+           if(ret ~= 0)
                error('USTCDAC:CheckStatus','Exist some task failed!');
            end
         end
@@ -449,7 +449,7 @@ classdef USTCDAC < handle
         function InitBoard(obj)
             obj.AutoOpen();
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001A05')),11,uint32(2^16));
-            if(ret == -1)
+            if(ret ~= 0)
                  error('USTCDAC:WriteRegError','WriteReg failed.');
             end
         end
@@ -457,7 +457,7 @@ classdef USTCDAC < handle
         function PowerOnDAC(obj,chip,onoff)
             obj.AutoOpen();
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001E05')),uint32(chip),uint32(onoff));
-            if(ret == -1)
+            if(ret ~= 0)
                  error('USTCDAC:PowerOnDAC','PowerOnDAC failed.');
             end
         end
