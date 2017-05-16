@@ -132,6 +132,55 @@ classdef USTCADC < handle
            end
         end
         
+        function SetMode(obj,isdemo)
+            if obj.isopen
+                if(isdemo == 0)
+                    data = [1,1,17,17,17,17,17,17];
+                else
+                    data = [1,1,34,34,34,34,34,34];
+                end
+                pdata = libpointer('uint8Ptr', data);
+                [ret,~] = calllib(obj.driver,'SendData',int32(8),pdata);
+                if(ret ~= 0)
+                   error('USTCADC:SendPacket','SetMode failed!');
+                end
+            end       
+        end
+        
+        function SetWindowLength(obj,length)
+            if obj.isopen
+                data = [0,20,floor(length/256),mod(length,256),0,0,0,0];
+                pdata = libpointer('uint8Ptr', data);
+                [ret,~] = calllib(obj.driver,'SendData',int32(8),pdata);
+                if(ret ~= 0)
+                   error('USTCADC:SendPacket','SetWindowLength failed!');
+                end
+            end       
+        end
+        
+        function SetWindowStart(obj,pos)
+            if obj.isopen
+                data = [0,21,floor(pos/256),mod(pos,256),0,0,0,0];
+                pdata = libpointer('uint8Ptr', data);
+                [ret,~] = calllib(obj.driver,'SendData',int32(8),pdata);
+                if(ret ~= 0)
+                   error('USTCADC:SendPacket','SetWindowStart failed!');
+                end
+            end 
+        end
+        
+        function SetDemoFre(obj,fre)
+            if obj.isopen
+                step = fre/1e9*65536;
+                data = [0,22,floor(step/256),mod(step,256),0,0,0,0];
+                pdata = libpointer('uint8Ptr', data);
+                [ret,~] = calllib(obj.driver,'SendData',int32(8),pdata);
+                if(ret ~= 0)
+                   error('USTCADC:SendPacket','SetDemoFre failed!');
+                end
+            end 
+        end
+        
         function [ret,I,Q] = RecvData(obj,row,column)
             if obj.isopen
                 I = zeros(row*column,1);
@@ -139,6 +188,20 @@ classdef USTCADC < handle
                 pI = libpointer('uint8Ptr', I);
                 pQ = libpointer('uint8Ptr', Q);
                 [ret,I,Q] = calllib(obj.driver,'RecvData',int32(row*column),int32(column),pI,pQ);
+            end
+        end
+        
+        function [ret,I,Q] = RecvDemo(obj,row)
+            if obj.isopen
+                IQ = zeros(2*row,1);
+                pIQ = libpointer('int32Ptr', IQ);
+                [ret,IQ] = calllib(obj.driver,'RecvDemo',int32(row*2),pIQ);%row*2表示包含I和Q
+                if(ret == 0)
+                    I = IQ(1:2:length(IQ));
+                    Q = IQ(2:2:length(IQ));
+                else
+                    error('USTCADC:RecvDemo','Recive demode data error!')
+                end
             end
         end
         
