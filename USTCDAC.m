@@ -125,6 +125,7 @@ classdef USTCDAC < handle
                 if(mod(floor(ret/(2^20)),4) == 3)
                     isDACReady = 1*islaneReady;
                 else
+                    isDACReady  = 0;
                     obj.InitBoard();
                     try_count =  try_count - 1;
                     pause(0.1);
