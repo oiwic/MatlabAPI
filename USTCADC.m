@@ -195,7 +195,7 @@ classdef USTCADC < handle
             if obj.isopen
                 IQ = zeros(2*row,1);
                 pIQ = libpointer('int32Ptr', IQ);
-                [ret,IQ] = calllib(obj.driver,'RecvDemo',int32(row*2),pIQ);%row*2表示包含I和Q
+                [ret,IQ] = calllib(obj.driver,'RecvDemo',int32(row),pIQ);
                 if(ret == 0)
                     I = IQ(1:2:length(IQ));
                     Q = IQ(2:2:length(IQ));
