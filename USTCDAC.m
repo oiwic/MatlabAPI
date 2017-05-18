@@ -506,6 +506,16 @@ classdef USTCDAC < handle
             obj.SetTrigStop(floor((obj.trig_delay+ num)/8)+ 10);
         end
         
+        function SetBoardcast(obj,isBoardcast,period)
+            obj.AutoOpen();
+            period = floor(period*5);
+            period(period > 255) = 255;
+            ret = calllib(obj.driver,'WriteInstruction', obj.id,uint32(hex2dec('00001305')),uint32(isBoardcast),uint32(period));
+            if(ret ~= 0)
+                error('USTCDAC:SetLoopError','SetLoop failed.');
+            end
+        end
+        
         function value = get(obj,properties)
             switch lower(properties)
                 case 'isblock';value = obj.isblock ;
