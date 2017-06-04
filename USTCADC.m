@@ -25,6 +25,29 @@ classdef USTCADC < handle
         driverh = 'USTCADCDriver.h';
     end
     
+    methods(Static = true)
+        function list = ListAdpter()
+            driverfilename = [USTCADC.driver,'.dll'];
+            if(~libisloaded(USTCADC.driver))
+                loadlibrary(driverfilename,USTCADC.driverh);
+            end
+            list = blanks(2048);
+            pos = 1;
+            str = libpointer('cstring',blanks(2048));
+            [ret,info] = calllib(USTCADC.driver,'GetAdapterList',str);
+            if(ret == 0)
+                info = regexp(info,'\n', 'split');
+                for index = 1:length(info)
+                   info{index} = [num2str(index),' : ',info{index}];
+                   list(pos:pos + length(info{index})) = [info{index},10];
+                   pos = pos + length(info{index}) + 1;
+                end
+            else
+                error('USTCDAC: Get adpter list failed!');
+            end
+        end
+    end
+    
     methods
         function obj = USTCADC(num)
             obj.netcard_no = num;
