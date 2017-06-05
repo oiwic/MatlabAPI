@@ -204,6 +204,22 @@ classdef USTCADC < handle
             end 
         end
         
+        function SetGain(obj,mode)
+            if obj.isopen
+                switch mode
+                    case 1,code = [80,80];
+                    case 2,code = [0,0];
+                    case 3,code = [255,255];
+                end
+                data = [0,23,code(1),code(2),0,0,0,0];
+                pdata = libpointer('uint8Ptr', data);
+                [ret,~] = calllib(obj.driver,'SendData',int32(8),pdata);
+                if(ret ~= 0)
+                   error('USTCADC:SendPacket','SetGain failed!');
+                end
+            end 
+        end
+        
         function [ret,I,Q] = RecvData(obj,row,column)
             if obj.isopen
                 I = zeros(row*column,1);
