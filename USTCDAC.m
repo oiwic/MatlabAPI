@@ -270,6 +270,14 @@ classdef USTCDAC < handle
              end
         end
         
+        function ClearTrigCount(obj)
+            obj.AutoOpen();
+            ret= calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001F05')),0,0);
+            if(ret ~= 0)
+                 error('USTCDAC:ClearTrigCount','Clear triger count failed.');
+            end
+        end
+        
         function SetGain(obj,channel,data)
              obj.AutoOpen();
              map = [2,3,0,1];       %有bug，需要做一次映射
