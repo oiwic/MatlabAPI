@@ -92,6 +92,7 @@ classdef USTCDAC < handle
         end
          
         function Init(obj)
+            obj.SetTimeOut(10);
             obj.SetIsMaster(obj.ismaster);
             obj.SetTrigSel(obj.trig_sel);
             obj.SetTrigInterval(obj.trig_interval);
@@ -478,6 +479,15 @@ classdef USTCDAC < handle
             ret = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001E05')),uint32(chip),uint32(onoff));
             if(ret ~= 0)
                  error('USTCDAC:PowerOnDAC','PowerOnDAC failed.');
+            end
+        end
+        
+        function SetTimeOut(obj,time)
+            obj.AutoOpen();
+            ret1 = calllib(obj.driver,'SetTimeOut',obj.id,1,time);
+            ret2 = calllib(obj.driver,'SetTimeOut',obj.id,0,time);
+            if(ret1 ~= 0||ret2 ~= 0)
+                 error('USTCDAC:SetTimeOut',['error code1',num2str(ret1),'error code2',num2str(ret2)]);
             end
         end
         
