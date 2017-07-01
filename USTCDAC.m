@@ -16,7 +16,7 @@ classdef USTCDAC < handle
     
     properties
         isblock = 0;            % is run in block mode
-        name = '';              % DAC's name
+        name = 'Unnamed';       % DAC's name
         channel_amount = 4;     % DAC maximum channel number
         sample_rate = 2e9;      % DAC sample rate
         sync_delay = 0;         % DAC sync delay

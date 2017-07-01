@@ -18,7 +18,7 @@ classdef USTCADC < handle
         channel_amount = 2;          % ADC channel amount, I & Q.
         isdemod = 0;                 % is run demod mode.
         sample_depth = 2000;         % ADC sample depth
-        sample_count = 100;          % ADC accept trigger count
+        trig_count = 100;          % ADC accept trigger count
         window_start = 0;            % start position of demod window.
         window_width = 2000;         % demod window width.
         demod_frequency = 100e6;     % demod frequency.
@@ -33,7 +33,7 @@ classdef USTCADC < handle
     methods(Static = true)
         function LoadLibrary()
             if(~libisloaded(USTCADC.driver))
-                loadlibrary(USTCADC.driverdll,USTCDAC.driverh);
+                loadlibrary(USTCADC.driverdll,USTCADC.driverh);
             end
         end
         function info = GetDriverInformation()
@@ -92,16 +92,6 @@ classdef USTCADC < handle
         function Init(obj)
             obj.SetMacAddr(obj.mac);
             obj.SetGain(1);
-        end
-        function Config(obj)
-            obj.SetSampleDepth(obj.sample_depth);
-            obj.SetTrigCount(obj.sample_count);
-            obj.SetMode(obj.isdemod)
-            if(obj.isdemod)
-               obj.SetWindowLength(obj.window_width);
-               obj.SetWindowStart(obj.window_start);
-               obj.SetDemoFre(obj.demod_frequency);
-            end
         end
         function SetSampleDepth(obj,depth)
             obj.sample_depth = depth;

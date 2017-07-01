@@ -35,7 +35,6 @@ classdef ustcadda_v1 < qes.hwdriver.icinterface_compatible % extends icinterface
         ad_list = []
         da_channel_list = []
         ad_channel_list = []
-        
         da_master_index = 1
     end
     
@@ -262,23 +261,27 @@ classdef ustcadda_v1 < qes.hwdriver.icinterface_compatible % extends icinterface
             len = length(obj.da_list);
             while(len>0)
                 obj.da_list(len).da.Open();
+                obj.da_list(len).da.Init();
                 len = len - 1;
             end
             len = length(obj.ad_list);
             while(len>0)
                 obj.ad_list(len).ad.Open();
+                obj.ad_list(len).ad.Init();
                 len = len - 1;
             end
         end
         function [I,Q] = Run(obj,isSample)
             I = 0; Q = 0; ret = -1;
+            obj.da_list(obj.da_master_index).da.SetTrigCount(obj.runReps);
             for k = 1:obj.numDABoards
                 obj.da_list(k).da.StartStop((15 - obj.da_list(k).mask_min)*16);
                 obj.da_list(k).da.StartStop(obj.da_list(k).mask_plus);
                 obj.da_list(k).da.SetTrigDelay(obj.da_list(k).da_trig_delay);
             end
-            if(isSample)
-                obj.ad_list(1).ad.Config();
+            if(obj.ad_list(1).ad.isdemod || isSample)
+               obj.ad_list(1).ad.SetSampleDepth(obj.adRecordLength);
+               obj.ad_list(1).ad.SetTrigCount(obj.runReps);
             end
             for k=1:obj.numDABoards
                 state = obj.da_list(k).da.CheckStatus();
