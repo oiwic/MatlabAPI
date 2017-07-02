@@ -25,6 +25,7 @@ classdef USTCDAC < handle
         gain = zeros(1,4);      % DAC channel gain
         offset = zeros(1,4);    % DAC channel offset, unused
         offsetCorr = zeros(1,4);% DAC offset voltage code.
+        
         trig_sel = 0;           % trigger source select
         trig_interval = 200e-6; % trigger interval
         ismaster = 0;           % master flag
@@ -35,6 +36,30 @@ classdef USTCDAC < handle
         driver  = 'USTCDACDriver';      % dll module name
         driverh = 'USTCDACDriver.h';    % dll header file name
         driverdll = 'USTCDACDriver.dll' % dll binary file name
+    end
+    
+    properties(GetAccess = private,Constant = true)
+        func = {...
+            struct('name','SetLoop','instruction',uint32(hex2dec('00000905')),'para1',@(para)(para{1}*65536+para{2}),'para2',@(para)(para{3}*65536+para{4})),...
+            struct('name','StartStop','instruction',uint32(hex2dec('00000405')),'para1',@(para)uint32(para{1}),'para2',@(para)(0)),...
+            struct('name','SetTotalCount','instruction',uint32(hex2dec('00001805')),'para1',@(para)(1),'para2',@(para)(uint32(para{1}*2^16))),...
+            struct('name','SetDACStart','instruction',uint32(hex2dec('00001805')),'para1',@(para)(2),'para2',@(para)(uint32(para{1}*2^16))),...
+            struct('name','SetDACStop','instruction',uint32(hex2dec('00001805')),'para1',@(para)(3),'para2',@(para)(uint32(para{1}*2^16))),...
+            struct('name','SetTrigStart','instruction',uint32(hex2dec('00001805')),'para1',@(para)(4),'para2',@(para)(uint32(para{1}*2^16))),...
+            struct('name','SetTrigStop','instruction',uint32(hex2dec('00001805')),'para1',@(para)(5),'para2',@(para)(uint32(para{1}*2^16))),...
+            struct('name','SetIsMaster','instruction',uint32(hex2dec('00001805')),'para1',@(para)(6),'para2',@(para)(uint32(para{1}*2^16))),...
+            struct('name','SetTrigSel','instruction',uint32(hex2dec('00001805')),'para1',@(para)(7),'para2',@(para)(uint32(para{1}*2^16))),...
+            struct('name','SendIntTrig','instruction',uint32(hex2dec('00001805')),'para1',@(para)(8),'para2',@(para)(uint32(2^16))),...
+            struct('name','SetTrigInterval','instruction',uint32(hex2dec('00001805')),'para1',@(para)(9),'para2',@(para)(uint32(para{1}/(4e-9)*2^12))),...
+            struct('name','SetTrigCount','instruction',uint32(hex2dec('00001805')),'para1',@(para)uint32(10),'para2',@(para)(uint32(para{1}*2^12))),...
+            struct('name','ClearTrigCount','instruction',uint32(hex2dec('00001F05')),'para1',@(para)(0),'para2',@(para)(0)),...
+            struct('name','SetGain','instruction',uint32(hex2dec('00000702')),'para1',@(para)(mod(para{1}+1,4)),'para2',@(para)(para{2})),...
+            struct('name','SetOffset','instruction',uint32(hex2dec('00000702')),'para1',@(para)(mod(para{1}+1,4)+4),'para2',@(para)(para{2})),...
+            struct('name','SetDefaultVolt','instruction',uint32(hex2dec('00001B05')),'para1',@(para)(para{1}-1),'para2',@(para)(para{2})),...
+            struct('name','InitBoard','instruction',uint32(hex2dec('00001A05')),'para1',@(para)(11),'para2',@(para)(2^16)),...
+            struct('name','PowerOnDAC','instruction',uint32(hex2dec('00001E05')),'para1',@(para)(para{1}),'para2',@(para)(para{2})),...
+            struct('name','SetBoardcast','instruction',uint32(hex2dec('00001305')),'para1',@(para)(para{1}),'para2',@(para)(floor(para{2})*5)),...
+        }
     end
     
     methods (Static = true), 
@@ -75,7 +100,7 @@ classdef USTCDAC < handle
     
     methods
         function obj = USTCDAC(ip,port)   % Construct function 
-            obj.ip = ip; obj.port = port;
+            obj.ip = ip;obj.port = port;
         end
         function Open(obj)                % Connect to DAC board.
             obj.LoadLibrary();
@@ -114,28 +139,29 @@ classdef USTCDAC < handle
                 error('USTCDAC:Init',['Init DAC ',obj.name,' failed']);
             end
             obj.SetTimeOut(0,10); obj.SetTimeOut(1,10);
-            obj.SetIsMaster(obj.ismaster);
-            obj.SetTrigSel(obj.trig_sel);
-            obj.SetTrigInterval(obj.trig_interval);
-            obj.SetTotalCount(obj.trig_interval/4e-9 - 5000);
-            obj.SetLoop(1,1,1,1);
-            obj.SetDACStart(obj.sync_delay/4e-9 + 1);
-            obj.SetDACStop(obj.sync_delay/4e-9 + 10);
-            obj.SetTrigDelay(0);
+            subsref(obj,[struct('type','.','subs','SetIsMaster'),struct('type','()','subs',{{obj.ismaster}})]);
+            subsref(obj,[struct('type','.','subs','SetTrigSel'),struct('type','()','subs',{{obj.trig_sel}})]);
+            subsref(obj,[struct('type','.','subs','SetTrigInterval'),struct('type','()','subs',{{obj.trig_interval}})]);
+            subsref(obj,[struct('type','.','subs','SetTotalCount'),struct('type','()','subs',{{obj.trig_interval/4e-9 - 5000}})]);
+            subsref(obj,[struct('type','.','subs','SetLoop'),struct('type','()','subs',{[{1},{1},{1},{1}]})]);
+            subsref(obj,[struct('type','.','subs','SetDACStart'),struct('type','()','subs',{{obj.sync_delay/4e-9 + 1}})]);
+            subsref(obj,[struct('type','.','subs','SetDACStop'),struct('type','()','subs',{{obj.sync_delay/4e-9 + 10}})]);
+            subsref(obj,[struct('type','.','subs','SetTrigStart'),struct('type','()','subs',{{obj.trig_delay/4e-9 + 1}})]);
+            subsref(obj,[struct('type','.','subs','SetTrigStop'),struct('type','()','subs',{{obj.trig_delay/4e-9 + 10}})]);
             for k = 1:obj.channel_amount
-                obj.SetGain(k,obj.gain(k));
-                obj.SetDefaultVolt(k,obj.offsetCorr(k)+32768);
+                subsref(obj,[struct('type','.','subs','SetGain'),struct('type','()','subs',{[{k},{obj.gain(k)}]})]);
+                subsref(obj,[struct('type','.','subs','SetDefaultVolt'),struct('type','()','subs',{[{k},{obj.offsetCorr(k)+32768}]})]);
             end
         end
         function WriteReg(obj,bank,addr,data)
              cmd = bank*256 + 2; %1表示ReadReg，指令和bank存储在一个DWORD数据中
-             ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,cmd,addr,data);
+             ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,uint32(cmd),uint32(addr),uint32(data));
              obj.DispError(['USTCDAC:WriteReg:',obj.name],ErrorCode);
              obj.Block();
         end
         function reg = ReadReg(obj,bank,addr)
              cmd = bank*256 + 1; %1表示ReadReg，指令和bank存储在一个DWORD数据中
-             ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,cmd,addr,0);
+             ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,uint32(cmd),uint32(addr),0);
              obj.DispError(['USTCDAC:ReadReg:',obj.name],ErrorCode);
              value = obj.GetReturn(1);
              reg = value.ResponseData;
@@ -151,7 +177,7 @@ classdef USTCDAC < handle
             startaddr = (ch-1)*2*2^18+2*offset;
             len = length(data)*2;
             pval = libpointer('uint16Ptr', data);
-            [ErrorCode,~] = calllib(obj.driver,'WriteMemory',obj.id,hex2dec('000000004'),startaddr,len,pval);
+            [ErrorCode,~] = calllib(obj.driver,'WriteMemory',obj.id,uint32(hex2dec('000000004')),uint32(startaddr),uint32(len),pval);
             obj.DispError(['USTCDAC:WriteWave:',obj.name],ErrorCode);
             obj.Block();
         end
@@ -163,12 +189,12 @@ classdef USTCDAC < handle
             startaddr = (ch*2-1)*2^18+offset*8; %序列的内存起始地址，单位是字节。
             len = length(data)*2;               %字节个数。
             pval = libpointer('uint16Ptr', data);
-            [ErrorCode,~] = calllib(obj.driver,'WriteMemory',obj.id,hex2dec('00000004'),startaddr,len,pval);
+            [ErrorCode,~] = calllib(obj.driver,'WriteMemory',obj.id,uint32(hex2dec('00000004')),uint32(startaddr),uint32(len),pval);
             obj.DispError(['USTCDAC:WriteSeq:',obj.name],ErrorCode);
             obj.Block();
         end
         function functype = GetFuncType(obj,offset)
-             [ErrorCode,functiontype,instruction,para1,para2] = calllib(obj.driver,'GetFunctionType',obj.id,offset,0,0,0,0);
+             [ErrorCode,functiontype,instruction,para1,para2] = calllib(obj.driver,'GetFunctionType',uint32(obj.id),uint32(offset),0,0,0,0);
              obj.DispError(['USTCDAC:GetFuncType:',obj.name],ErrorCode);
              template = {{'Write instruction type'},{'Write memory type.'},{'Read memory type.'}};
              functype = struct('functiontype',functiontype,'instruction',instruction,'para1',para1,'para2',para2,'description',template{functiontype});
@@ -181,140 +207,58 @@ classdef USTCDAC < handle
             end
             obj.DispError(['USTCDAC:SetTimeOut:',obj.name],ErrorCode);
         end
-        function SetTrigDelay(obj,point)
-            obj.SetTrigStart((obj.daTrigDelayOffset + point)/8+1);
-            obj.SetTrigStop((obj.daTrigDelayOffset + point)/8+10);
-        end
         function Block(obj)
             if(obj.isblock)
                 obj.GetReturn(1);
             end
         end
-        function data  = ReadAD9136(obj,chip,addr)
+        function data = ReadAD9136(obj,chip,addr)
             if(chip == 1)
-                ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001c05'),addr,0);
+                ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001c05')),uint32(addr),uint32(0));
             else
-                ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001d05'),addr,0);
+                ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,uint32(hex2dec('00001d05')),uint32(addr),uint32(0));
             end
             obj.DispError(['USTCDAC:ReadAD9136:',obj.name],ErrorCode);
             value = obj.GetReturn(1);
             data = value.ResponseData;
         end
+        function SetTrigDelay(obj,point)
+            subsref(obj,[struct('type','.','subs','SetTrigStart'),struct('type','()','subs',{{(obj.daTrigDelayOffset + point)/8+1}})]);
+            subsref(obj,[struct('type','.','subs','SetTrigStop'),struct('type','()','subs',{{(obj.daTrigDelayOffset + point)/8+10}})]);
+        end
         function value = GetReturn(obj,offset)
            functype = obj.GetFuncType(1);
            pData = libpointer('uint16Ptr',zeros(1,functype.para2/2));
-           [ErrorCode,ResStat,ResData,data] = calllib(obj.driver,'GetReturn',obj.id,offset,0,0,pData);
+           [ErrorCode,ResStat,ResData,data] = calllib(obj.driver,'GetReturn',uint32(obj.id),uint32(offset),0,0,pData);
            obj.DispError(['USTCDAC:GetReturn:',obj.name],ErrorCode);
            obj.DispError(['USTCDAC:GetReturn:',obj.name],int32(ResStat));
            value = struct('ResponseState',ResStat,'ResponseData',ResData,'data',data);
         end
         function state = CheckStatus(obj)
-           [ErrorCode,isSuccessed,pos] = calllib(obj.driver,'CheckSuccessed',obj.id,0,0);
+           [ErrorCode,isSuccessed,pos] = calllib(obj.driver,'CheckSuccessed',uint32(obj.id),0,0);
            state = struct('isSuccessed',isSuccessed,'position',pos);
            obj.DispError(['USTCDAC:CheckStatus:',obj.name],ErrorCode);
         end
-    end
-    
-    methods
-        function InitBoard(obj)
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001A05'),11,2^16);
-            obj.DispError(['USTCDAC:InitBoard:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function PowerOnDAC(obj,chip,onoff)
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001E05'),chip,onoff);
-            obj.DispError(['USTCDAC:PowerOnDAC:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function StartStop(obj,index)
-            ErrorCode = calllib(obj.driver,'WriteInstruction', obj.id,hex2dec('00000405'),index,0);
-            obj.DispError(['USTCDAC:StartStop:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetLoop(obj,arg1,arg2,arg3,arg4)
-            para1 = arg1*2^16 + arg2; para2 = arg3*2^16 + arg4;
-            ErrorCode = calllib(obj.driver,'WriteInstruction', obj.id,hex2dec('00000905'),para1,para2);
-            obj.DispError(['USTCDAC:SetLoop:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetTotalCount(obj,count)
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001805'),1,count*2^16);
-            obj.DispError(['USTCDAC:SetTotalCount:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetDACStart(obj,count)
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001805'),2,count*2^16);
-            obj.DispError(['USTCDAC:SetDACStart:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetDACStop(obj,count)
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001805'),3,count*2^16);
-            obj.DispError(['USTCDAC:SetDACStop:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetTrigStart(obj,count)
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001805'),4,count*2^16);
-            obj.DispError(['USTCDAC:SetTrigStart:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetTrigStop(obj,count)
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001805'),5,count*2^16);
-            obj.DispError(['USTCDAC:SetTrigStop:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetIsMaster(obj,ismaster)
-            ErrorCode= calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001805'),6,ismaster*2^16);
-            obj.DispError(['USTCDAC:SetIsMaster:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetTrigSel(obj,sel)
-            ErrorCode= calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001805'),7,sel*2^16);
-            obj.DispError(['USTCDAC:SetTrigSel:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SendIntTrig(obj)
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001805'),8,2^16);
-            obj.DispError(['USTCDAC:SendIntTrig:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetTrigInterval(obj,T)
-            ErrorCode= calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001805'),9,floor(T/4e-9)*2^12);
-            obj.DispError(['USTCDAC:SetTrigInterval:',obj.name],ErrorCode);
-            obj.Block();
-        end 
-        function SetTrigCount(obj,count)
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001805'),10,count*2^12);
-            obj.DispError(['USTCDAC:SetTrigCount:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function ClearTrigCount(obj)
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001F05'),0,0);
-            obj.DispError(['USTCDAC:ClearTrigCount:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetGain(obj,channel,data)
-            map = [2,3,0,1];channel = map(channel);
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00000702'),uint32(channel),data);
-            obj.DispError(['USTCDAC:SetGain:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetOffset(obj,channel,data)
-            map = [6,7,4,5]; channel = map(channel);
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00000702'),channel,data);
-            obj.DispError(['USTCDAC:SetOffset:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetDefaultVolt(obj,channel,volt)
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001B05'),channel-1,volt);
-            obj.DispError(['USTCDAC:SetDefaultVolt:',obj.name],ErrorCode);
-            obj.Block();
-        end
-        function SetBoardcast(obj,isBoardcast,period)
-            period = floor(period*5);
-            period(period > 255) = 255;
-            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001305'),isBoardcast,period);
-            obj.DispError(['USTCDAC:SetBoardcast:',obj.name],ErrorCode);
-            obj.Block();
+        function sref = subsref(obj,s)
+            isInstruction = 0;sref = [];
+            if(s(1).type == '.')
+                for k = 1:length(obj.func)
+                    if(strcmp(s(1).subs,obj.func{k}.name))
+                        isInstruction = 1; break;
+                    end
+                end
+            end
+            if(isInstruction)
+                ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,obj.func{k}.instruction,obj.func{k}.para1(s(2).subs),obj.func{k}.para2(s(2).subs)); 
+                obj.Block();
+                obj.DispError(['USTCDAC:',obj.func{k}.name,':',obj.name],ErrorCode);
+            else
+                try
+                   sref = builtin('subsref',obj,s);
+                catch
+                   builtin('subsref',obj,s);
+                end
+            end
         end
     end
 end

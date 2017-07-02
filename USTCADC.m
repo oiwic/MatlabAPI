@@ -189,7 +189,7 @@ classdef USTCADC < handle
                 [ret,I,Q] = calllib(obj.driver,'RecvData',int32(row),int32(column),pI,pQ);
                 I = (reshape(I,[obj.sample_depth,obj.trig_count]))';
                 Q = (reshape(Q,[obj.sample_depth,obj.trig_count]))';
-            end
+           end
         end
      end
 end
