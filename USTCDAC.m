@@ -106,7 +106,7 @@ classdef USTCDAC < handle
                 if(sum(lane == 255) == length(lane) && mod(floor(light/(2^20)),4) == 3)
                     isDACReady= 1;
                 else                 
-                    subsref(obj,[struct('type','.','subs','InitBoard'),struct('type','()','subs',{})]);
+                    obj.InitBoard();
                     pause(1); try_count =  try_count - 1;
                 end
             end
