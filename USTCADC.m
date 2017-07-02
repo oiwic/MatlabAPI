@@ -46,8 +46,8 @@ classdef USTCADC < handle
             USTCADC.LoadLibrary();
             list = blanks(2048);
             str = libpointer('cstring',blanks(2048));
-            [ret,info] = calllib(USTCADC.driver,'GetAdapterList',str);
-            if(ret == 0)
+            [ErrorCode,info] = calllib(USTCADC.driver,'GetAdapterList',str);
+            if(ErrorCode == 0)
                 info = regexp(info,'\n', 'split');pos = 1;
                 for index = 1:length(info)
                    info{index} = [num2str(index),' : ',info{index}];
@@ -84,10 +84,12 @@ classdef USTCADC < handle
             end
         end
         function Close(obj)
-            ErrorCode = calllib(obj.driver,'CloseADC');
-            obj.DispError('USTCADC:Close',ErrorCode);
-            obj.status = 'close';
-            obj.isopen = false;
+			if(obj.isopen == true)
+				ErrorCode = calllib(obj.driver,'CloseADC');
+				obj.DispError('USTCADC:Close',ErrorCode);
+				obj.status = 'close';
+				obj.isopen = false;
+			end
         end
         function Init(obj)
             obj.SetMacAddr(obj.mac);
