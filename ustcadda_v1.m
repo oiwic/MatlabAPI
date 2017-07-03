@@ -272,8 +272,8 @@ classdef ustcadda_v1 < qes.hwdriver.icinterface_compatible % extends icinterface
                 len = len - 1;
             end
         end
-        function [I,Q] = Run(obj,isSample)
-            I = 0; Q = 0; ret = -1;
+        function [I,Q,isSuccessed] = Run(obj,isSample)
+            I = 0; Q = 0; ret = -1;isSuccessed = 1;
             obj.da_list(obj.da_master_index).da.SetTrigCount(obj.runReps);
             for k = 1:obj.numDABoards
                 obj.da_list(k).da.StartStop((15 - obj.da_list(k).mask_min)*16);
@@ -284,15 +284,16 @@ classdef ustcadda_v1 < qes.hwdriver.icinterface_compatible % extends icinterface
                obj.ad_list(1).ad.SetSampleDepth(obj.adRecordLength);
                obj.ad_list(1).ad.SetTrigCount(obj.runReps);
             end
-            for k=1:obj.numDABoards
-                state = obj.da_list(k).da.CheckStatus();
-                if(state.isSuccessed ~= 1)
-                    try
+            for k=1:obj.numDABoards 
+                try
+                    state = obj.da_list(k).da.CheckStatus();
+                    if(state.isSuccessed ~= 1)     
                         obj.da_list(k).da.GetReturn(state.position);% Throw an exception.
-                    catch
-                        obj.da_list(k).da.Close();
-                        obj.da_list(k).da.Open();
                     end
+                catch
+                    obj.da_list(k).da.Close();
+                    obj.da_list(k).da.Open();
+                    isSuccessed = 0;
                 end
             end
             while(ret ~= 0)
