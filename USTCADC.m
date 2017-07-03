@@ -62,6 +62,7 @@ classdef USTCADC < handle
                 str = libpointer('cstring',blanks(1024));
                 [~,info] = calllib(USTCADC.driver,'GetErrorMsg',int32(errorcode),str);
                 msg = ['Error code:',num2str(errorcode),' --> ',info];
+                WriteErrorLog([MsgID,' ',msg]);
                 error(MsgID,msg);
             end
         end

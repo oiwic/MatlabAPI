@@ -68,6 +68,7 @@ classdef USTCDAC < handle
                 str = libpointer('cstring',blanks(1024));
                 [~,info] = calllib(USTCDAC.driver,'GetErrorMsg',int32(errorcode),str);
                 msg = ['Error code:',num2str(errorcode),' --> ',info];
+                WriteErrorLog([MsgID,' ',msg]);
                 error(MsgID,[MsgID,' ',msg]);
             end
         end

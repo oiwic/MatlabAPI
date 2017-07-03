@@ -146,6 +146,7 @@ classdef ustcadda_v1 < qes.hwdriver.icinterface_compatible % extends icinterface
     methods
         function Config(obj)
             obj.Close();
+            addpath('dlls');
             QS = qes.qSettings.GetInstance();
             s = QS.loadHwSettings('ustcadda');
             obj.numDABoards = length(s.da_boards);
@@ -286,7 +287,12 @@ classdef ustcadda_v1 < qes.hwdriver.icinterface_compatible % extends icinterface
             for k=1:obj.numDABoards
                 state = obj.da_list(k).da.CheckStatus();
                 if(state.isSuccessed ~= 1)
-                    GetReturn(state.position);% Throw an exception.
+                    try
+                        obj.da_list(k).da.GetReturn(state.position);% Throw an exception.
+                    catch
+                        obj.da_list(k).da.Close();
+                        obj.da_list(k).da.Open();
+                    end
                 end
             end
             while(ret ~= 0)
