@@ -281,6 +281,7 @@ classdef ustcadda_v1 < qes.hwdriver.icinterface_compatible % extends icinterface
                 obj.da_list(k).da.SetTrigDelay(obj.da_list(k).da_trig_delay);
             end
             if(obj.ad_list(1).ad.isdemod || isSample)
+               obj.ad_list(1).ad.SetMode(obj.ad_list(1).ad.isdemod);
                obj.ad_list(1).ad.SetSampleDepth(obj.adRecordLength);
                obj.ad_list(1).ad.SetTrigCount(obj.runReps);
             end

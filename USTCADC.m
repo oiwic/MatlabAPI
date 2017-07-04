@@ -63,7 +63,7 @@ classdef USTCADC < handle
                 [~,info] = calllib(USTCADC.driver,'GetErrorMsg',int32(errorcode),str);
                 msg = ['Error code:',num2str(errorcode),' --> ',info];
                 WriteErrorLog([MsgID,' ',msg]);
-                error(MsgID,msg);
+                error(MsgID,[MsgID,' ',msg]);
             end
         end
     end
