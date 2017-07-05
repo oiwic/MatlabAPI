@@ -125,7 +125,7 @@ classdef USTCDAC < handle
             obj.SetTrigDelay(0);
             for k = 1:obj.channel_amount
                 obj.SetGain(k,obj.gain(k));
-                obj.SetDefaultVolt(k,obj.offsetCorr(k)+32768);
+                obj.SetDefaultVolt(k,32768);
             end
         end
         function WriteReg(obj,bank,addr,data)
@@ -142,13 +142,14 @@ classdef USTCDAC < handle
              reg = value.ResponseData;
         end
         function WriteWave(obj,ch,offset,wave)
-            wave(wave > 65535) = 65535;  % 范围限制
-            wave(wave < 0) = 0;
-            data = obj.FormatData(wave); % 调字节序以及补够512bit的位宽
-            data = 65535 - data;         % 数据反相，临时需要
             if(ch < 1 || ch > obj.channel_amount) % 从0通道开始编号
                 error('Wrong channel!');
             end
+            data = obj.FormatData(wave); % 调字节序以及补够512bit的位宽
+            data = data + obj.offsetCorr(ch);
+            data(data > 65535) = 65535;  % 范围限制
+            data(data < 0) = 0;
+            data = 65535 - data;         % 由于负通道接示波器，数据反相方便观察
             startaddr = (ch-1)*2*2^18+2*offset;
             len = length(data)*2;
             pval = libpointer('uint16Ptr', data);
@@ -306,6 +307,10 @@ classdef USTCDAC < handle
             obj.Block();
         end
         function SetDefaultVolt(obj,channel,volt)
+            volt = volt + obj.offsetCorr(channel);
+            volt(volt > 65535) = 65535;  % 范围限制
+            volt(volt < 0) = 0;
+            volt = 65535 - volt;         % 由于负通道接示波器，数据反相方便观察
             ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001B05'),channel-1,volt);
             obj.DispError(['USTCDAC:SetDefaultVolt:',obj.name],ErrorCode);
             obj.Block();
