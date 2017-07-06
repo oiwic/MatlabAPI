@@ -530,6 +530,22 @@ classdef USTCDAC < handle
             end
         end
         
+        function temp = GetDA1_temp(obj)
+            tt1 = obj.ReadAD9136_1(hex2dec('132'));
+            tt2 = obj.ReadAD9136_1(hex2dec('133'));
+            tt1 = mod(tt1,256);
+            tt2 = mod(tt2,256);
+            temp = 30+7.3*(tt2*256+tt1-39200)/1000.0;
+        end
+
+        function temp = GetDA2_temp(obj)
+            tt1 = obj.ReadAD9136_2(hex2dec('132'));
+            tt2 = obj.ReadAD9136_2(hex2dec('133'));
+            tt1 = mod(tt1,256);
+            tt2 = mod(tt2,256);
+            temp = 30+7.3*(tt2*256+tt1-39200)/1000.0;
+        end
+        
         function value = get(obj,properties)
             switch lower(properties)
                 case 'isblock';value = obj.isblock ;
