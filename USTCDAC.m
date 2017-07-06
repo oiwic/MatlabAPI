@@ -114,7 +114,8 @@ classdef USTCDAC < handle
             if(isDACReady == 0)
                 error('USTCDAC:Init',['Init DAC ',obj.name,' failed']);
             end
-            obj.SetTimeOut(0,10); obj.SetTimeOut(1,10);
+            obj.SetTimeOut(0,2);
+            obj.SetTimeOut(1,2);
             obj.SetIsMaster(obj.ismaster);
             obj.SetTrigSel(obj.trig_sel);
             obj.SetTrigInterval(obj.trig_interval);
@@ -175,12 +176,8 @@ classdef USTCDAC < handle
              template = {{'Write instruction type'},{'Write memory type.'},{'Read memory type.'}};
              functype = struct('functiontype',functiontype,'instruction',instruction,'para1',para1,'para2',para2,'description',template{functiontype});
         end
-        function SetTimeOut(obj,isRecv,time)
-            if(isRecv)
-                ErrorCode = calllib(obj.driver,'SetTimeOut',obj.id,0,time);
-            else
-                ErrorCode = calllib(obj.driver,'SetTimeOut',obj.id,1,time);
-            end
+        function SetTimeOut(obj,isOut,time)
+            ErrorCode = calllib(obj.driver,'SetTimeOut',obj.id,isOut,time);
             obj.DispError(['USTCDAC:SetTimeOut:',obj.name],ErrorCode);
         end
         function SetTrigDelay(obj,point)
