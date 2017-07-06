@@ -434,7 +434,23 @@ classdef USTCDAC < handle
             ret = obj.GetReturn(1);
             data = double(ret(2))*65536 + double(ret(1));
         end
+        
+        function temp = GetDA1_temp(obj)
+            tt1 = obj.ReadAD9136_1(hex2dec('132'));
+            tt2 = obj.ReadAD9136_1(hex2dec('133'));
+            tt1 = mod(tt1,256);
+            tt2 = mod(tt2,256);
+            temp = 30+7.3*(tt2*256+tt1-39200)/1000.0;
+        end
 
+        function temp = GetDA2_temp(obj)
+            tt1 = obj.ReadAD9136_2(hex2dec('132'));
+            tt2 = obj.ReadAD9136_2(hex2dec('133'));
+            tt1 = mod(tt1,256);
+            tt2 = mod(tt2,256);
+            temp = 30+7.3*(tt2*256+tt1-39200)/1000.0;
+        end
+		
         function [functiontype,instruction,para1,para2] = GetFuncType(obj,offset)
             obj.AutoOpen()
             [ret,functiontype,instruction,para1,para2] = calllib(obj.driver,'GetFunctionType',uint32(obj.id),uint32(offset),0,0,0,0);
