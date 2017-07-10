@@ -319,5 +319,10 @@ classdef USTCDAC < handle
             obj.DispError(['USTCDAC:SetBoardcast:',obj.name],ErrorCode);
             obj.Block();
         end
+        function ConfigEEPROM(obj)
+            ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00002005'),0,0);
+            obj.DispError(['USTCDAC:ConfigEEPROM:',obj.name],ErrorCode);
+            obj.Block();
+        end
     end
 end
