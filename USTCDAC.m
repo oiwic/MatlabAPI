@@ -201,7 +201,11 @@ classdef USTCDAC < handle
         end
         function value = GetReturn(obj,offset)
            functype = obj.GetFuncType(1);
-           pData = libpointer('uint16Ptr',zeros(1,functype.para2/2));
+           if functype.functiontype ~= 1
+                pData = libpointer('uint16Ptr',zeros(1,functype.para2/2));
+           else
+                pData = libpointer('uint16Ptr',zeros(1,1));
+           end
            [ErrorCode,ResStat,ResData,data] = calllib(obj.driver,'GetReturn',obj.id,offset,0,0,pData);
            obj.DispError(['USTCDAC:GetReturn:',obj.name],ErrorCode);
            obj.DispError(['USTCDAC:GetReturn:',obj.name],int32(ResStat));
