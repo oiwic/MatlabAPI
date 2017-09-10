@@ -24,8 +24,8 @@ classdef waveform
             for k = 1:4096
                 seq(4*k-3) = 0;
                 seq(4*k-2) = 0;
-                seq(4*k-1) = 0;
-                seq(4*k)   = count;
+                seq(4*k-1) = count;
+                seq(4*k)   = 0;
             end
         end
         

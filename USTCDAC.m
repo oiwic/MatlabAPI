@@ -201,7 +201,11 @@ classdef USTCDAC < handle
         end
         function value = GetReturn(obj,offset)
            functype = obj.GetFuncType(1);
-           pData = libpointer('uint16Ptr',zeros(1,functype.para2/2));
+           if functype.functiontype ~= 1
+                pData = libpointer('uint16Ptr',zeros(1,functype.para2/2));
+           else
+                pData = libpointer('uint16Ptr',zeros(1,1));
+           end
            [ErrorCode,ResStat,ResData,data] = calllib(obj.driver,'GetReturn',obj.id,offset,0,0,pData);
            obj.DispError(['USTCDAC:GetReturn:',obj.name],ErrorCode);
            obj.DispError(['USTCDAC:GetReturn:',obj.name],int32(ResStat));
@@ -323,6 +327,13 @@ classdef USTCDAC < handle
             ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00002005'),0,0);
             obj.DispError(['USTCDAC:ConfigEEPROM:',obj.name],ErrorCode);
             obj.Block();
+        end
+        function temp = GetDATemperature(obj,chip)
+            tt1 = obj.ReadAD9136(chip,hex2dec('132'));
+            tt2 = obj.ReadAD9136(chip,hex2dec('133'));
+            tt1 = double(mod(tt1,256));
+            tt2 = double(mod(tt2,256));
+            temp = 30+7.3*(tt2*256+tt1-39200)/1000.0;
         end
     end
 end
