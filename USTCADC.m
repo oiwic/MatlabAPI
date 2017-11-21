@@ -226,7 +226,7 @@ classdef USTCADC < handle
                 end
             end
             if(obj.isopen)
-                data = [0,23,obj.channel_gain{1},obj.channel_gain{2},0,0,0,0];
+                data = [0,23,obj.channel_gain(1),obj.channel_gain(2),0,0,0,0];
                 pdata = libpointer('uint8Ptr',data);
                 [ErrorCode,~] = calllib(obj.driver,'SendData',int32(obj.id),int32(8),pdata);
                 obj.DispError('USTCADC:SetGain',ErrorCode,obj.id);
