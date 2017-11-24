@@ -70,8 +70,8 @@ classdef USTCADC < handle
     end
     
     methods
-        function obj = USTCADC(num,dstmac)
-            obj.netcard = num;
+        function obj = USTCADC(srcmac,dstmac)
+            obj.srcmac = srcmac;
             obj.dstmac = dstmac;
             obj.isopen = false;
             obj.status = 'close';
@@ -79,8 +79,9 @@ classdef USTCADC < handle
         function Open(obj)
             if ~obj.isopen
                 obj.LoadLibrary();
-                pMac = libpointer('string',obj.dstmac);
-                [ErrorCode,obj.id] = calllib(obj.driver,'OpenADC',0,int32(obj.netcard),pMac);
+                pMacSrc = libpointer('string',obj.srcmac);
+                pMacDst = libpointer('string',obj.dstmac);
+                [ErrorCode,obj.id] = calllib(obj.driver,'OpenADC',0,pMacSrc,pMacDst);
                 obj.DispError('USTCADC:Open',ErrorCode,obj.id);
                 obj.status = 'open';
                 obj.isopen = true;
@@ -232,6 +233,16 @@ classdef USTCADC < handle
                 obj.DispError('USTCADC:SetGain',ErrorCode,obj.id);
             end
         end
+        
+        function CommitDemodSet(obj,module)
+            if(obj.isopen)
+                data = [0,24,module*16,0,0,0,0,0];
+                pdata = libpointer('uint8Ptr',data);
+                [ErrorCode,~] = calllib(obj.driver,'SendData',int32(obj.id),int32(8),pdata);
+                obj.DispError('USTCADC:CommitDemodSet',ErrorCode,obj.id);
+            end
+        end
+        
         function SetADName(obj,name)
             obj.name = name;
         end
@@ -248,13 +259,13 @@ classdef USTCADC < handle
         end
         function [ret,I,Q] = RecvData(obj)
             if(obj.isdemod)
-                IQ = zeros(2*obj.trig_count,1);
+                IQ = zeros(24*obj.trig_count,1);
                 pIQ = libpointer('int32Ptr', IQ);
                 [ret,IQ] = calllib(obj.driver,'RecvDemo',int32(obj.id),int32(obj.trig_count),pIQ);
-                if(ret == 0)
-                    I = IQ(1:2:length(IQ));
-                    Q = IQ(2:2:length(IQ));
-                end
+                I = IQ(1:2:length(IQ));
+                I = reshape(I,12,obj.trig_count);
+                Q = IQ(2:2:length(IQ));
+                Q = reshape(Q,12,obj.trig_count);
             else
                 I = zeros(obj.trig_count*obj.sample_depth,1);
                 Q = zeros(obj.trig_count*obj.sample_depth,1);

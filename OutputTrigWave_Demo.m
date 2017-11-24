@@ -1,4 +1,4 @@
-da = USTCDAC('10.0.2.1',80);
+da = USTCDAC('10.0.2.5',80);
 da.Open();
 da.Init();
 da.SetIsMaster(1);
