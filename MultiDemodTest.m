@@ -52,13 +52,8 @@ da.CheckStatus();
 ad.SetWindowWidth(4000);
 ad.SetWindowStart(8);
 for k = 1:12
-    if(testtable(k)~=0)
-        ad.SetDemoFre(frequency(k));
-        ad.CommitDemodSet(k-1);
-    else
-        ad.SetDemoFre(500e6);
-        ad.CommitDemodSet(k-1);
-    end
+    ad.SetDemoFre(frequency(k));
+    ad.CommitDemodSet(k-1);
 end
 ad.EnableADC();
 da.SendIntTrig();
@@ -67,3 +62,4 @@ subplot(2,1,2);
 bar(sqrt(mean(I,2).^2 + mean(Q,2).^2));
 ad.Close();
 da.Close();
+
