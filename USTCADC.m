@@ -212,8 +212,17 @@ classdef USTCADC < handle
             end
             if(obj.isopen)
                 for k = 1:length(obj.demod_freq)
-                    step = obj.demod_freq(k)/1e9*65536;
-                    data = [0,22,floor(step/256),mod(step,256),0,0,0,0];
+                    step = floor(obj.demod_freq(k)/1e9*16777216 + 0.5);
+                    data1 = 0;
+                    if(step < 0)
+                        data1 = 128;
+                        step = abs(step);
+                    end
+                    data1 = data1 + floor(step/131072);
+                    data2 = mod(floor(step/512),256);
+                    data3 = mod(floor(step/2),256);
+                    data4 = mod(step,2)*128;
+                    data = [0,22,data1,data2,data3,data4,0,0];
                     pdata = libpointer('uint8Ptr', data);
                     [ErrorCode,~] = calllib(obj.driver,'SendData',int32(obj.id),int32(8),pdata);
                     obj.DispError('USTCADC:SetDemoFre',ErrorCode,obj.id);
