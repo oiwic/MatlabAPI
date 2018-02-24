@@ -95,15 +95,27 @@ classdef USTCDAC < handle
         function Init(obj)                % Init DAC after first time connect DAC
             isDACReady = 0; try_count = 10;
             while(try_count > 0 && ~isDACReady)
+                condition = zeros(1,3);
                 lane = zeros(1,8);idx = 1;
                 for addr = 1136:1139
                     lane(idx)   = obj.ReadAD9136(1,addr);
                     lane(idx+1) = obj.ReadAD9136(2,addr);
                     idx = idx + 2;
                 end
-                light = obj.ReadReg(5,8);
                 lane = mod(lane,256);
-                if(sum(lane == 255) == length(lane) && mod(floor(light/(2^20)),4) == 3)
+                if(sum(lane == 255) == length(lane))
+                    condition(1) = 1;
+                end
+                reg1 = obj.ReadAD9136(1,327);
+                reg2 = obj.ReadAD9136(2,327);
+                if(floor(mod(reg1,256)/64) == 3 && floor(mod(reg2,256)/64) == 3)
+                    condition(2) = 1;
+                end
+                light = obj.ReadReg(5,8);
+                if(mod(floor(light/(2^20)),4) == 3)
+                    condition(3) = 1;
+                end
+                if(sum(condition) == 3 )
                     isDACReady= 1;
                 else                 
                     obj.InitBoard();
