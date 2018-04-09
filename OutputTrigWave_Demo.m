@@ -1,11 +1,12 @@
-da = USTCDAC('10.0.2.7',80);
+da = USTCDAC('10.0.2.5',80);
 da.Open();
 da.Init();
 da.SetIsMaster(1);
-da.SetTrigSel(0);
+da.SetTrigSel(3);%3 sma£¬0 rj45
+
 da.StartStop(15);
-data  = 1:64000;
 waveobj = waveform();
+data = waveobj.generate_squr();
 seq = waveobj.generate_trig_seq(length(data),0);
 num = 0;
 while(1)
