@@ -2,7 +2,7 @@
 % 	Author:GuoCheng
 % 	E-mail:fortune@mail.ustc.edu.cn
 % 	All right reserved @ GuoCheng.
-% 	Modified: 2017.9.12
+% 	Modified: 2018.4.9
 %   Description:The class of DAC
 
 classdef USTCDAC < handle
@@ -60,12 +60,12 @@ classdef USTCDAC < handle
         function data = FormatData(datain)
             len = length(datain);
             data = datain;
-            if(mod(len,32) ~= 0)     % 补齐512bit
+            if(mod(len,32) ~= 0)     % 512bit
                 len = (floor(len/32)+1)*32;
                 data = zeros(1,len);
                 data(1:length(datain)) = datain;
             end
-            for k = 1:length(data)/2 % 颠倒前后数据，这是由于FPGA接收字节序问题
+            for k = 1:length(data)/2 % Reverse the data due to the byte order problem of the FPGA
                 temp = data(2*k);
                 data(2*k) = data(2*k-1);
                 data(2*k-1) = temp;
@@ -140,27 +140,27 @@ classdef USTCDAC < handle
             end
         end
         function WriteReg(obj,bank,addr,data)
-             cmd = bank*256 + 2; %1表示ReadReg，指令和bank存储在一个DWORD数据中
+             cmd = bank*256 + 2;
              ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,cmd,addr,data);
              obj.DispError(['USTCDAC:WriteReg:',obj.name],ErrorCode);
              obj.Block();
         end
         function reg = ReadReg(obj,bank,addr)
-             cmd = bank*256 + 1; %1表示ReadReg，指令和bank存储在一个DWORD数据中
+             cmd = bank*256 + 1;
              ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,cmd,addr,0);
              obj.DispError(['USTCDAC:ReadReg:',obj.name],ErrorCode);
              value = obj.GetReturn(1);
              reg = value.ResponseData;
         end
         function WriteWave(obj,ch,offset,wave)
-            if(ch < 1 || ch > obj.channel_amount) % 从0通道开始编号
+            if(ch < 1 || ch > obj.channel_amount) 
                 error('Wrong channel!');
             end
-            data = obj.FormatData(wave); % 调字节序以及补够512bit的位宽
+            data = obj.FormatData(wave); % Adjust byte order and fill 512bit bit width
             data = data + obj.offsetCorr(ch) + obj.offset(ch);
-            data(data > 65535) = 65535;  % 范围限制
+            data(data > 65535) = 65535;  % Range limit
             data(data < 0) = 0;
-            data = 65535 - data;         % 由于负通道接示波器，数据反相方便观察
+            data = 65535 - data;         % invert data value
             startaddr = (ch-1)*2*2^18+2*offset;
             len = length(data)*2;
             pval = libpointer('uint16Ptr', data);
@@ -171,10 +171,10 @@ classdef USTCDAC < handle
         function WriteSeq(obj,ch,offset,seq)
             data = obj.FormatData(seq);
             if(ch < 1 || ch > obj.channel_amount)
-                error('Wrong channel!');        % 检查通道编号
+                error('Wrong channel!');
             end
-            startaddr = (ch*2-1)*2^18+offset*8; %序列的内存起始地址，单位是字节。
-            len = length(data)*2;               %字节个数。
+            startaddr = (ch*2-1)*2^18+offset*8; 
+            len = length(data)*2;
             pval = libpointer('uint16Ptr', data);
             [ErrorCode,~] = calllib(obj.driver,'WriteMemory',obj.id,hex2dec('00000004'),startaddr,len,pval);
             obj.DispError(['USTCDAC:WriteSeq:',obj.name],ErrorCode);
@@ -195,7 +195,7 @@ classdef USTCDAC < handle
                 obj.GetReturn(1);
             end
         end
-        function data  = ReadAD9136(obj,chip,addr)
+        function data  = ReadAD9136(obj,chip,addr) % chip can be 1 or 2
             if(chip == 1)
                 ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001c05'),addr,0);
             else
@@ -321,9 +321,9 @@ classdef USTCDAC < handle
         end
         function SetDefaultVolt(obj,channel,volt)
             volt = volt + obj.offsetCorr(channel) + obj.offset(channel);
-            volt(volt > 65535) = 65535;  % 范围限制
+            volt(volt > 65535) = 65535;
             volt(volt < 0) = 0;
-            volt = 65535 - volt;         % 由于负通道接示波器，数据反相方便观察
+            volt = 65535 - volt;
             ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('00001B05'),channel-1,volt);
             obj.DispError(['USTCDAC:SetDefaultVolt:',obj.name],ErrorCode);
             obj.Block();
@@ -399,11 +399,38 @@ classdef USTCDAC < handle
                   obj.SetDefaultVolt(channel,32768);
             end
         end
+
         function SetTrigCorr(obj,data)
             obj.daTrigDelayOffset = data;
         end
         function SetOffsetCorr(obj,data)
             obj.offsetCorr = data;
         end
+%         function ConfigFPGA(obj,filename)
+%             try
+%                 f = fopen(filename,'rb');
+%                 data = fread(f,inf);
+%                 startaddr = 4*2*2^18;
+%                 pval = libpointer('uint8Ptr', data);
+%                 [ErrorCode,~] = calllib(obj.driver,'WriteMemory',obj.id,hex2dec('000000004'),startaddr,length(data),pval);
+%                 obj.DispError(['USTCDAC:ConfigFPGA:',obj.name],ErrorCode);
+%                 obj.CommitConfig();
+%                 obj.Reboot();
+%                 obj.CheckStatus();
+%                 obj.Close();
+%             catch exception
+%                 disp(exception)
+%             end
+%         end
+%         function Reboot(obj)
+%             ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('0000FFFF'),0,0);
+%             obj.DispError(['USTCDAC:Reboot:',obj.name],ErrorCode);
+%             obj.Block();
+%         end
+%         function CommitConfig(obj)
+%             ErrorCode = calllib(obj.driver,'WriteInstruction',obj.id,hex2dec('0000FFFF'),0,0);
+%             obj.DispError(['USTCDAC:CommitConfig:',obj.name],ErrorCode);
+%             obj.Block();
+%         end
     end
 end
